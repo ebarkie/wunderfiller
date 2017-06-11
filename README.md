@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/ebarkie/wunderfiller.svg?branch=master)](https://travis-ci.org/ebarkie/wunderfiller)
 
 Fills in any data gaps in Weather Underground station data by using
-the Davis Instructions HTTP server archive data.
+the Davis Instruments HTTP server archive data.
 
 ## Installation
 
