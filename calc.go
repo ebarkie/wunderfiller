@@ -4,9 +4,7 @@
 
 package main
 
-import (
-	"math"
-)
+import "math"
 
 func cToF(c float64) float64 {
 	return c*1.8 + 32.0
