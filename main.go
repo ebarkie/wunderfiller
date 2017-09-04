@@ -105,17 +105,19 @@ func fill(begin time.Time, serverAddress string, id string, password string, tes
 		a := archive[i]
 		f.dailyRain += a.RainAccum
 
-		if !fuzzyTimeMatch(a.Timestamp, wuTimes) {
-			fmt.Printf("\tMissing %s: ", a.Timestamp)
-			if test {
-				fmt.Println("not uploaded.")
+		if fuzzyTimeMatch(a.Timestamp, wuTimes) {
+			continue
+		}
+
+		fmt.Printf("\tMissing %s: ", a.Timestamp)
+		if test {
+			fmt.Println("not uploaded.")
+		} else {
+			err := f.wuUpload(a)
+			if err != nil {
+				fmt.Println(err)
 			} else {
-				err := f.wuUpload(a)
-				if err != nil {
-					fmt.Println(err)
-				} else {
-					fmt.Println("successfully uploaded.")
-				}
+				fmt.Println("successfully uploaded.")
 			}
 		}
 
