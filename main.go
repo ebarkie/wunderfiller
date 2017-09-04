@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/ebarkie/weatherlink"
+	"github.com/ebarkie/wunderfiller/internal/wxcalc"
 	"github.com/ebarkie/wunderground"
 )
 
@@ -155,7 +156,7 @@ func (f *filler) wuUpload(a weatherlink.Archive) (err error) {
 	w.Timestamp = a.Timestamp
 	w.Wx.Barometer(a.Bar)
 	w.Wx.DailyRain(f.dailyRain)
-	w.Wx.DewPoint(dewPoint(a.OutTemp, a.OutHumidity))
+	w.Wx.DewPoint(wxcalc.DewPoint(a.OutTemp, a.OutHumidity))
 	w.Wx.OutdoorHumidity(a.OutHumidity)
 	w.Wx.OutdoorTemperature(a.OutTemp)
 	w.Wx.RainRate(a.RainRateHi)
