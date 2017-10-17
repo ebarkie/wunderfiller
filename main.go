@@ -195,9 +195,9 @@ func main() {
 
 	flag.Parse()
 
-	begin := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Now().Location())
+	begin := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local)
 	if *date != "" {
-		begin, _ = time.ParseInLocation("2006-01-02", *date, time.Now().Location())
+		begin, _ = time.ParseInLocation("2006-01-02", *date, time.Local)
 	}
 
 	if begin.IsZero() ||
