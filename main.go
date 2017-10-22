@@ -15,8 +15,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ebarkie/weatherlink"
-	"github.com/ebarkie/wunderfiller/internal/wxcalc"
+	"github.com/ebarkie/weatherlink/calc"
+	"github.com/ebarkie/weatherlink/data"
 	"github.com/ebarkie/wunderground"
 )
 
@@ -28,7 +28,7 @@ type filler struct {
 	password string
 }
 
-func archiveInterval(archive []weatherlink.Archive) (interval time.Duration) {
+func archiveInterval(archive []data.Archive) (interval time.Duration) {
 	if len(archive) > 1 {
 		interval = archive[0].Timestamp.Sub(archive[1].Timestamp)
 	} else {
@@ -38,7 +38,7 @@ func archiveInterval(archive []weatherlink.Archive) (interval time.Duration) {
 	return
 }
 
-func archiveRecords(serverAddress string, begin time.Time, end time.Time) (archive []weatherlink.Archive, err error) {
+func archiveRecords(serverAddress string, begin time.Time, end time.Time) (archive []data.Archive, err error) {
 	// Build HTTP request.
 	req, _ := http.NewRequest("GET", "http://"+serverAddress+"/archive", nil)
 
@@ -150,7 +150,7 @@ func wuDailyHistoryTimes(day time.Time, id string) (times []time.Time, err error
 	return
 }
 
-func (f *filler) wuUpload(a weatherlink.Archive) (err error) {
+func (f *filler) wuUpload(a data.Archive) (err error) {
 	w := wunderground.New(f.id, f.password)
 	w.SoftwareType = "GoWunder wf." + version
 	w.Interval = f.interval
@@ -158,7 +158,7 @@ func (f *filler) wuUpload(a weatherlink.Archive) (err error) {
 	w.Timestamp = a.Timestamp
 	w.Wx.Barometer(a.Bar)
 	w.Wx.DailyRain(f.dailyRain)
-	w.Wx.DewPoint(wxcalc.DewPoint(a.OutTemp, a.OutHumidity))
+	w.Wx.DewPoint(calc.DewPoint(a.OutTemp, a.OutHumidity))
 	w.Wx.OutdoorHumidity(a.OutHumidity)
 	w.Wx.OutdoorTemperature(a.OutTemp)
 	w.Wx.RainRate(a.RainRateHi)
