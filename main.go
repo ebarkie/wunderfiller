@@ -83,7 +83,7 @@ func fill(begin time.Time, serverAddress string, id string, password string, tes
 	fmt.Printf("\tFound %d archive records.\n", len(archive))
 
 	// Get timestamps from Wunderground.
-	wuTimes, err := wuDailyHistoryTimes(begin, id)
+	wuTimes, err := wuDailyTimes(begin, id)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -138,12 +138,12 @@ func fuzzyTimeMatch(a time.Time, times []time.Time) bool {
 	return false
 }
 
-func wuDailyHistoryTimes(day time.Time, id string) (times []time.Time, err error) {
-	w := wunderground.New(id, "")
-	observations, err := w.DownloadDailyHistory(day)
+func wuDailyTimes(day time.Time, id string) (times []time.Time, err error) {
+	w := wunderground.Pws{ID: id}
+	obs, err := w.DownloadDaily(day)
 	if err == nil {
-		for _, o := range observations {
-			times = append(times, o.Timestamp.Time)
+		for _, o := range obs {
+			times = append(times, o.Time.Time)
 		}
 	}
 
@@ -151,37 +151,38 @@ func wuDailyHistoryTimes(day time.Time, id string) (times []time.Time, err error
 }
 
 func (f *filler) wuUpload(a data.Archive) (err error) {
-	w := wunderground.New(f.id, f.password)
+	w := wunderground.Pws{ID: f.id, Password: f.password}
 	w.SoftwareType = "GoWunder wf." + version
 	w.Interval = f.interval
 
-	w.Timestamp = a.Timestamp
-	w.Wx.Barometer(a.Bar)
-	w.Wx.DailyRain(f.dailyRain)
-	w.Wx.DewPoint(calc.DewPoint(a.OutTemp, a.OutHumidity))
-	w.Wx.OutdoorHumidity(a.OutHumidity)
-	w.Wx.OutdoorTemperature(a.OutTemp)
-	w.Wx.RainRate(a.RainRateHi)
+	w.Time = a.Timestamp
+	wx := &wunderground.Wx{}
+	wx.Barometer(a.Bar)
+	wx.DailyRain(f.dailyRain)
+	wx.DewPoint(calc.DewPoint(a.OutTemp, a.OutHumidity))
+	wx.OutdoorHumidity(a.OutHumidity)
+	wx.OutdoorTemperature(a.OutTemp)
+	wx.RainRate(a.RainRateHi)
 	for _, v := range a.SoilMoist {
 		if v != nil {
-			w.Wx.SoilMoisture(*v)
+			wx.SoilMoisture(*v)
 		}
 	}
 	for _, v := range a.SoilTemp {
 		if v != nil {
-			w.Wx.SoilTemperature(float64(*v))
+			wx.SoilTemperature(float64(*v))
 		}
 	}
-	w.Wx.SolarRadiation(a.SolarRad)
-	w.Wx.UVIndex(a.UVIndexAvg)
-	w.Wx.WindDirection(a.WindDirPrevail)
-	w.Wx.WindSpeed(float64(a.WindSpeedAvg))
+	wx.SolarRadiation(a.SolarRad)
+	wx.UVIndex(a.UVIndexAvg)
+	wx.WindDirection(a.WindDirPrevail)
+	wx.WindSpeed(float64(a.WindSpeedAvg))
 	if a.WindSpeedHi > a.WindSpeedAvg {
-		w.Wx.WindGustDirection(a.WindDirHi)
-		w.Wx.WindGustSpeed(float64(a.WindSpeedHi))
+		wx.WindGustDirection(a.WindDirHi)
+		wx.WindGustSpeed(float64(a.WindSpeedHi))
 	}
 
-	_, err = w.Upload()
+	err = w.Upload(wx)
 
 	return
 }
