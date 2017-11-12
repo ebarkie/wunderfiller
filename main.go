@@ -30,15 +30,15 @@ var (
 	errNoPasswd = errors.New("password is needed to upload")
 )
 
-func archiveInterval(archives []data.Archive) time.Duration {
-	if len(archives) > 1 {
-		return archives[0].Timestamp.Sub(archives[1].Timestamp)
+func archiveInterval(archive []data.Archive) time.Duration {
+	if len(archive) > 1 {
+		return archive[0].Timestamp.Sub(archive[1].Timestamp)
 	}
 
 	return 5 * time.Minute
 }
 
-func getArchives(serverAddress string, begin, end time.Time) (archive []data.Archive, err error) {
+func getArchive(serverAddress string, begin, end time.Time) (archive []data.Archive, err error) {
 	// Build HTTP request.
 	req, _ := http.NewRequest("GET", "http://"+serverAddress+":8080/archive", nil)
 
@@ -74,12 +74,12 @@ func fill(begin, end time.Time, addr, id, password string, test bool) error {
 	fmt.Printf("Fill range is %s to %s.\n", begin.Format(timeLayout), end.Format(timeLayout))
 
 	// Get records from archive.
-	archives, err := getArchives(addr, begin, end)
+	archive, err := getArchive(addr, begin, end)
 	if err != nil {
 		return err
 	}
-	interval := archiveInterval(archives)
-	fmt.Printf("Found %d archive records.\n", len(archives))
+	interval := archiveInterval(archive)
+	fmt.Printf("Found %d archive records.\n", len(archive))
 
 	// Get timestamps from Wunderground.
 	wuTimes, err := getWuTimes(begin, end, id)
@@ -98,8 +98,8 @@ func fill(begin, end time.Time, addr, id, password string, test bool) error {
 		rainAccum float64
 		day       int
 	}
-	for i := len(archives) - 1; i >= 0; i-- {
-		a := archives[i]
+	for i := len(archive) - 1; i >= 0; i-- {
+		a := archive[i]
 
 		if a.Timestamp.Day() != daily.day {
 			daily.day = a.Timestamp.Day()
