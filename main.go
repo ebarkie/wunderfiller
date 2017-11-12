@@ -9,6 +9,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -20,27 +21,26 @@ import (
 	"github.com/ebarkie/wunderground"
 )
 
-type filler struct {
-	dailyRain float64
+const (
+	dateLayout = "2006-01-02"
+	timeLayout = "2006-01-02 15:04 MST"
+)
 
-	id       string
-	interval time.Duration
-	password string
-}
+var (
+	errNoPasswd = errors.New("password is needed to upload")
+)
 
-func archiveInterval(archive []data.Archive) (interval time.Duration) {
-	if len(archive) > 1 {
-		interval = archive[0].Timestamp.Sub(archive[1].Timestamp)
-	} else {
-		interval = 5 * time.Minute
+func archiveInterval(archives []data.Archive) time.Duration {
+	if len(archives) > 1 {
+		return archives[0].Timestamp.Sub(archives[1].Timestamp)
 	}
 
-	return
+	return 5 * time.Minute
 }
 
-func archiveRecords(serverAddress string, begin time.Time, end time.Time) (archive []data.Archive, err error) {
+func getArchives(serverAddress string, begin, end time.Time) (archive []data.Archive, err error) {
 	// Build HTTP request.
-	req, _ := http.NewRequest("GET", "http://"+serverAddress+"/archive", nil)
+	req, _ := http.NewRequest("GET", "http://"+serverAddress+":8080/archive", nil)
 
 	// Create GET query parameters.
 	q := req.URL.Query()
@@ -70,58 +70,63 @@ func archiveRecords(serverAddress string, begin time.Time, end time.Time) (archi
 	return
 }
 
-func fill(begin time.Time, serverAddress string, id string, password string, test bool) {
-	end := begin.Add(86399 * time.Second)
-	fmt.Printf("Checking range %s to %s.\n", begin, end)
+func fill(begin, end time.Time, addr, id, password string, test bool) error {
+	fmt.Printf("Fill range is %s to %s.\n", begin.Format(timeLayout), end.Format(timeLayout))
 
 	// Get records from archive.
-	archive, err := archiveRecords(serverAddress, begin, end)
+	archives, err := getArchives(addr, begin, end)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
-	fmt.Printf("\tFound %d archive records.\n", len(archive))
+	interval := archiveInterval(archives)
+	fmt.Printf("Found %d archive records.\n", len(archives))
 
 	// Get timestamps from Wunderground.
-	wuTimes, err := wuDailyTimes(begin, id)
+	wuTimes, err := getWuTimes(begin, end, id)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
-	fmt.Printf("\tFound %d Wunderground records.\n", len(wuTimes))
+	fmt.Printf("Found %d Wunderground observations.\n", len(wuTimes))
 
 	// Loop through archive records and perform uploads for anything
 	// that's missing.
 	//
-	// Each record only includes the rain accumulation for the archive
-	// period but if replay them in time order (the reverse of what we
-	// get) then we can calculate the daily rain.
-	f := filler{
-		id:       id,
-		password: password,
-		interval: archiveInterval(archive),
+	// Each archive record contains the rain accomulation for its period so
+	// by replaying them in time order (the reverse of what we get) we can
+	// keep a daily accumulator.
+	var daily struct {
+		rainAccum float64
+		day       int
 	}
-	for i := len(archive) - 1; i >= 0; i-- {
-		a := archive[i]
-		f.dailyRain += a.RainAccum
+	for i := len(archives) - 1; i >= 0; i-- {
+		a := archives[i]
+
+		if a.Timestamp.Day() != daily.day {
+			daily.day = a.Timestamp.Day()
+			daily.rainAccum = 0
+		}
+		daily.rainAccum += a.RainAccum
 
 		if fuzzyTimeMatch(a.Timestamp, wuTimes) {
 			continue
 		}
 
-		fmt.Printf("\tMissing %s: ", a.Timestamp)
+		fmt.Printf("\tMissing %s: ", a.Timestamp.Format(timeLayout))
 		if test {
 			fmt.Println("not uploaded.")
 		} else {
-			err := f.wuUpload(a)
+			err := upload(id, password, interval, daily.rainAccum, a)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Printf("%s.\n", err.Error())
 			} else {
 				fmt.Println("successfully uploaded.")
 			}
 		}
 
 	}
+
+	fmt.Println("Done!")
+	return nil
 }
 
 func fuzzyTimeMatch(a time.Time, times []time.Time) bool {
@@ -138,27 +143,40 @@ func fuzzyTimeMatch(a time.Time, times []time.Time) bool {
 	return false
 }
 
-func wuDailyTimes(day time.Time, id string) (times []time.Time, err error) {
+func getWuTimes(begin, end time.Time, id string) ([]time.Time, error) {
+	var ts []time.Time
+
 	w := wunderground.Pws{ID: id}
-	obs, err := w.DownloadDaily(day)
-	if err == nil {
+	for date := begin; date.Before(end.Add(1 * time.Second)); date = date.AddDate(0, 0, 1) {
+		obs, err := w.DownloadDaily(date)
+		if err != nil {
+			return ts, err
+		}
+
 		for _, o := range obs {
-			times = append(times, o.Time.Time)
+			ts = append(ts, o.Time.Time)
 		}
 	}
 
-	return
+	return ts, nil
 }
 
-func (f *filler) wuUpload(a data.Archive) (err error) {
-	w := wunderground.Pws{ID: f.id, Password: f.password}
-	w.SoftwareType = "GoWunder wf." + version
-	w.Interval = f.interval
+func upload(id, password string, interval time.Duration, dailyRain float64, a data.Archive) error {
+	if password == "" {
+		return errNoPasswd
+	}
 
-	w.Time = a.Timestamp
+	w := wunderground.Pws{
+		ID:           id,
+		Password:     password,
+		SoftwareType: "GoWunder wf." + version,
+		Interval:     interval,
+		Time:         a.Timestamp,
+	}
+
 	wx := &wunderground.Wx{}
 	wx.Barometer(a.Bar)
-	wx.DailyRain(f.dailyRain)
+	wx.DailyRain(dailyRain)
 	wx.DewPoint(calc.DewPoint(a.OutTemp, a.OutHumidity))
 	wx.OutdoorHumidity(a.OutHumidity)
 	wx.OutdoorTemperature(a.OutTemp)
@@ -182,32 +200,46 @@ func (f *filler) wuUpload(a data.Archive) (err error) {
 		wx.WindGustSpeed(float64(a.WindSpeedHi))
 	}
 
-	err = w.Upload(wx)
-
-	return
+	return w.Upload(wx)
 }
 
 func main() {
-	date := flag.String("date", "", "date to fill YYYY-MM-DD")
+	defBegin := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local)
+	defBeginStr := defBegin.Format(dateLayout)
+	defEndStr := defBegin.AddDate(0, 0, 1).Format(dateLayout)
+
+	beginStr := flag.String("begin", defBeginStr, "fill begin date YYYY-MM-DD")
+	endStr := flag.String("end", defEndStr, "fill begin date YYYY-MM-DD")
+	addr := flag.String("server", "", "weather server address (REQUIRED)")
 	id := flag.String("id", "", "personal weather station id (REQUIRED)")
-	password := flag.String("pass", "", "personal weather station password (REQUIRED)")
-	serverAddress := flag.String("server", "", "weather server address (REQUIRED)")
+	password := flag.String("pass", "", "personal weather station password")
 	test := flag.Bool("test", false, "test only/do not upload")
 
 	flag.Parse()
 
-	begin := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local)
-	if *date != "" {
-		begin, _ = time.ParseInLocation("2006-01-02", *date, time.Local)
+	var begin, end time.Time
+	var err error
+	for _, d := range []struct {
+		t *time.Time
+		s string
+	}{
+		{&begin, *beginStr},
+		{&end, *endStr},
+	} {
+		*d.t, err = time.ParseInLocation(dateLayout, d.s, time.Local)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
-	if begin.IsZero() ||
-		(len(*id) == 0) ||
-		(len(*password) == 0) ||
-		(len(*serverAddress) == 0) {
+	if *addr == "" || *id == "" {
 		flag.Usage()
-	} else {
-		fill(begin, *serverAddress, *id, *password, *test)
-		fmt.Println("Done!")
+		return
+	}
+
+	err = fill(begin, end, *addr, *id, *password, *test)
+	if err != nil {
+		fmt.Println(err)
 	}
 }
