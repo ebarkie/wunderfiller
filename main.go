@@ -175,28 +175,28 @@ func upload(id, password string, interval time.Duration, dailyRain float64, a da
 	}
 
 	wx := &wunderground.Wx{}
-	wx.Barometer(a.Bar)
+	wx.Bar(a.Bar)
 	wx.DailyRain(dailyRain)
 	wx.DewPoint(calc.DewPoint(a.OutTemp, a.OutHumidity))
-	wx.OutdoorHumidity(a.OutHumidity)
-	wx.OutdoorTemperature(a.OutTemp)
+	wx.OutHumidity(a.OutHumidity)
+	wx.OutTemp(a.OutTemp)
 	wx.RainRate(a.RainRateHi)
 	for _, v := range a.SoilMoist {
 		if v != nil {
-			wx.SoilMoisture(*v)
+			wx.SoilMoist(*v)
 		}
 	}
 	for _, v := range a.SoilTemp {
 		if v != nil {
-			wx.SoilTemperature(float64(*v))
+			wx.SoilTemp(float64(*v))
 		}
 	}
-	wx.SolarRadiation(a.SolarRad)
+	wx.SolarRad(a.SolarRad)
 	wx.UVIndex(a.UVIndexAvg)
-	wx.WindDirection(a.WindDirPrevail)
+	wx.WindDir(a.WindDirPrevail)
 	wx.WindSpeed(float64(a.WindSpeedAvg))
 	if a.WindSpeedHi > a.WindSpeedAvg {
-		wx.WindGustDirection(a.WindDirHi)
+		wx.WindGustDir(a.WindDirHi)
 		wx.WindGustSpeed(float64(a.WindSpeedHi))
 	}
 
