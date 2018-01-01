@@ -18,22 +18,24 @@ $ go build
 
 ```
 Usage of ./wunderfiller:
-  -date string
-        date to fill YYYY-MM-DD
+  -begin string
+    	fill begin date YYYY-MM-DD (default "2018-01-01")
+  -end string
+    	fill begin date YYYY-MM-DD (default "2018-01-02")
   -id string
-        personal weather station id (REQUIRED)
+    	personal weather station id (REQUIRED)
   -pass string
-        personal weather station password (REQUIRED)
+    	personal weather station password
   -server string
-        weather server address (REQUIRED)
+    	weather server address (REQUIRED)
   -test
-        test only/do not upload
+    	test only/do not upload
 
 $ ./wunderfiller -server wx:8080 -id Kxxyyyynn -pass deadbeef -test
 ```
 
 ## License
 
-Copyright (c) 2016-2017 Eric Barkie. All rights reserved.  
+Copyright (c) 2016-2018 Eric Barkie. All rights reserved.  
 Use of this source code is governed by the MIT license
 that can be found in the [LICENSE](LICENSE) file.
