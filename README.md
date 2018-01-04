@@ -21,7 +21,7 @@ Usage of ./wunderfiller:
   -begin string
     	fill begin date YYYY-MM-DD (default "2018-01-01")
   -end string
-    	fill begin date YYYY-MM-DD (default "2018-01-02")
+    	fill begin date YYYY-MM-DD (default "2018-01-01")
   -id string
     	personal weather station id (REQUIRED)
   -pass string
