@@ -147,7 +147,7 @@ func getWuTimes(begin, end time.Time, id string) ([]time.Time, error) {
 	var ts []time.Time
 
 	w := wunderground.Pws{ID: id}
-	for date := begin; date.Before(end.Add(1 * time.Second)); date = date.AddDate(0, 0, 1) {
+	for date := begin; date.Before(end); date = date.AddDate(0, 0, 1) {
 		obs, err := w.DownloadDaily(date)
 		if err != nil {
 			return ts, err
@@ -204,12 +204,8 @@ func upload(id, password string, interval time.Duration, dailyRain float64, a da
 }
 
 func main() {
-	defBegin := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.Local)
-	defBeginStr := defBegin.Format(dateLayout)
-	defEndStr := defBegin.AddDate(0, 0, 1).Format(dateLayout)
-
-	beginStr := flag.String("begin", defBeginStr, "fill begin date YYYY-MM-DD")
-	endStr := flag.String("end", defEndStr, "fill begin date YYYY-MM-DD")
+	beginStr := flag.String("begin", time.Now().Format(dateLayout), "fill begin date YYYY-MM-DD")
+	endStr := flag.String("end", time.Now().Format(dateLayout), "fill end date YYYY-MM-DD")
 	addr := flag.String("server", "", "weather server address (REQUIRED)")
 	id := flag.String("id", "", "personal weather station id (REQUIRED)")
 	password := flag.String("pass", "", "personal weather station password")
@@ -232,6 +228,7 @@ func main() {
 			return
 		}
 	}
+	end = end.Add(24 * time.Hour).Add(-1 * time.Nanosecond)
 
 	if *addr == "" || *id == "" {
 		flag.Usage()
