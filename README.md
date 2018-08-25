@@ -9,7 +9,6 @@ Underground station data.
 ## Installation
 
 ```
-$ go get
 $ go generate
 $ go build
 ```
