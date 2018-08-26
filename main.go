@@ -40,7 +40,7 @@ func archiveInterval(archive []data.Archive) time.Duration {
 
 func getArchive(serverAddress string, begin, end time.Time) (archive []data.Archive, err error) {
 	// Build HTTP request.
-	req, _ := http.NewRequest("GET", "http://"+serverAddress+":8080/archive", nil)
+	req, _ := http.NewRequest("GET", "http://"+serverAddress+"/archive", nil)
 
 	// Create GET query parameters.
 	q := req.URL.Query()
@@ -206,7 +206,7 @@ func upload(id, password string, interval time.Duration, dailyRain float64, a da
 func main() {
 	beginStr := flag.String("begin", time.Now().Format(dateLayout), "fill begin date YYYY-MM-DD")
 	endStr := flag.String("end", time.Now().Format(dateLayout), "fill end date YYYY-MM-DD")
-	addr := flag.String("server", "", "weather server address (REQUIRED)")
+	addr := flag.String("station", "", "weather station address (REQUIRED)")
 	id := flag.String("id", "", "personal weather station id (REQUIRED)")
 	password := flag.String("pass", "", "personal weather station password")
 	test := flag.Bool("test", false, "test only/do not upload")

@@ -18,19 +18,19 @@ $ go build
 ```
 Usage of ./wunderfiller:
   -begin string
-    	fill begin date YYYY-MM-DD (default "2018-01-01")
+        fill begin date YYYY-MM-DD (default "2018-08-26")
   -end string
-    	fill begin date YYYY-MM-DD (default "2018-01-01")
+        fill end date YYYY-MM-DD (default "2018-08-26")
   -id string
-    	personal weather station id (REQUIRED)
+        personal weather station id (REQUIRED)
   -pass string
-    	personal weather station password
-  -server string
-    	weather server address (REQUIRED)
+        personal weather station password
+  -station string
+        weather station address (REQUIRED)
   -test
-    	test only/do not upload
+        test only/do not upload
 
-$ ./wunderfiller -server wx:8080 -id Kxxyyyynn -pass deadbeef -test
+$ ./wunderfiller -station wx:8080 -id Kxxyyyynn -pass deadbeef -test
 ```
 
 ## License
