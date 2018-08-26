@@ -38,9 +38,9 @@ func archiveInterval(archive []data.Archive) time.Duration {
 	return 5 * time.Minute
 }
 
-func getArchive(serverAddress string, begin, end time.Time) (archive []data.Archive, err error) {
+func getArchive(addr string, begin, end time.Time) (archive []data.Archive, err error) {
 	// Build HTTP request.
-	req, _ := http.NewRequest("GET", "http://"+serverAddress+"/archive", nil)
+	req, _ := http.NewRequest("GET", "http://"+addr+"/archive", nil)
 
 	// Create GET query parameters.
 	q := req.URL.Query()
