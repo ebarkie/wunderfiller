@@ -35,6 +35,6 @@ $ ./wunderfiller -station wx:8080 -id Kxxyyyynn -pass deadbeef -test
 
 ## License
 
-Copyright (c) 2016-2018 Eric Barkie. All rights reserved.  
+Copyright (c) 2016-2019 Eric Barkie. All rights reserved.  
 Use of this source code is governed by the MIT license
 that can be found in the [LICENSE](LICENSE) file.
