@@ -1,8 +1,5 @@
 # Wunderground Filler
 
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](http://choosealicense.com/licenses/mit/)
-[![Build Status](https://travis-ci.org/ebarkie/wunderfiller.svg?branch=master)](https://travis-ci.org/ebarkie/wunderfiller)
-
 Uses the Davis station archive data to fill in any data gaps in Weather
 Underground station data.
 
