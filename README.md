@@ -1,3 +1,5 @@
+![Push](https://github.com/ebarkie/wunderfiller/workflows/Push/badge.svg)
+
 # Wunderground Filler
 
 Uses the Davis station archive data to fill in any data gaps in Weather
