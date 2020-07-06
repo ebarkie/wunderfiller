@@ -1,8 +1,8 @@
-module gitlab.com/ebarkie/wunderfiller
+module github.com/ebarkie/wunderfiller
 
 require (
-	gitlab.com/ebarkie/weatherlink v1.0.1
-	gitlab.com/ebarkie/wunderground v1.0.1
+	github.com/ebarkie/weatherlink v1.0.2
+	github.com/ebarkie/wunderground v1.0.4
 )
 
-go 1.13
+go 1.14
